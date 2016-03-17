@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         GitHub PR Approvals
 // @namespace    http://mattstow.com
-// @version      0.1.1
+// @version      0.2.0
 // @description  Require =Approved= before you can merge GitHub PRs
 // @author       Matt Stow (@stowball)
-// @match        https://github.com/*/*/pull*
+// @match        https://github.com/*
 // @grant        none
 // @require      https://greasyfork.org/scripts/1003-wait-for-key-elements/code/Wait%20for%20key%20elements.js?version=49342
 // ==/UserScript==
@@ -40,6 +40,30 @@ function enableButton() {
     }
 }
 
+function findCommentWrapper(el) {
+    while (el.parentNode) {
+        el = el.parentNode;
+
+        if (el.classList.contains('timeline-comment-wrapper')) {
+            return el;
+        }
+    }
+
+    return null;
+}
+
+function findCommitSiblings(el) {
+    while (el.nextElementSibling) {
+        el = el.nextElementSibling;
+
+        if (el.classList.contains('discussion-commits')) {
+            return el;
+        }
+    }
+
+    return null;
+}
+
 function lookForApproval(delay) {
     var delay = delay || 1500;
 
@@ -49,12 +73,18 @@ function lookForApproval(delay) {
 
         for (var i = comments.length - 1; i >= 0; i--) {
             if (comments[i].textContent === approvalString) {
-                foundApprovals++;
+                var parent = findCommentWrapper(comments[i]);
 
-                if (foundApprovals === requiredApprovals) {
-                    enableButton();
+                if (parent) {
+                    if (!findCommitSiblings(parent)) {
+                        foundApprovals++;
 
-                    break;
+                        if (foundApprovals === requiredApprovals) {
+                            enableButton();
+
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -74,7 +104,8 @@ function checkListener(e) {
     }
 }
 
-document.addEventListener('click', checkListener, false);
-document.addEventListener('keydown', checkListener, false);
-
-waitForKeyElements('.js-merge-branch-action', lookForApproval);
+waitForKeyElements('.js-merge-branch-action', () => {
+    document.addEventListener('click', checkListener, false);
+    document.addEventListener('keydown', checkListener, false);
+    lookForApproval();
+});
