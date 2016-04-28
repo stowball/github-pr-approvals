@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         GitHub PR Approvals
 // @namespace    http://mattstow.com
-// @version      0.2.0
+// @version      0.2.1
 // @description  Require =Approved= before you can merge GitHub PRs
 // @author       Matt Stow (@stowball)
 // @match        https://github.com/*
 // @grant        none
+// @require      https://code.jquery.com/jquery-2.2.3.min.js
 // @require      https://greasyfork.org/scripts/1003-wait-for-key-elements/code/Wait%20for%20key%20elements.js?version=49342
 // ==/UserScript==
 /* jshint -W097 */
@@ -64,10 +65,10 @@ function findCommitSiblings(el) {
     return null;
 }
 
-function lookForApproval(delay) {
-    var delay = delay || 1500;
+function lookForApproval(d) {
+    var delay = d || 1000;
 
-    window.setTimeout(() => {
+    setTimeout(function () {
         var comments = document.querySelectorAll('.comment-body p');
         var foundApprovals = 0;
 
@@ -104,7 +105,7 @@ function checkListener(e) {
     }
 }
 
-waitForKeyElements('.js-merge-branch-action', () => {
+waitForKeyElements('.js-merge-branch-action', function () {
     document.addEventListener('click', checkListener, false);
     document.addEventListener('keydown', checkListener, false);
     lookForApproval();
